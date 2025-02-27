@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect, memo, ChangeEvent, JSX } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,11 +8,32 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
 
+// Define types
+type TimeOfDay = "morning" | "afternoon" | "evening" | "";
+type Salutation = "ma'am" | "sir" | "";
+
+interface FormData {
+	timeOfDay: TimeOfDay;
+	salutation: Salutation;
+	subject: string;
+	reason: string;
+	name: string;
+	rollNo: string;
+}
+
+interface InlineInputProps {
+	field: keyof FormData;
+	value: string;
+	onChange: (field: keyof FormData, value: string) => void;
+	placeholder: string;
+	className?: string;
+}
+
 // Memoized input component to prevent unnecessary rerenders
-const MemoizedInlineInput = memo(({ field, value, onChange, placeholder, className = "" }) => (
+const MemoizedInlineInput = memo(({ field, value, onChange, placeholder, className = "" }: InlineInputProps) => (
 	<Input
 		value={value}
-		onChange={(e) => onChange(field, e.target.value)}
+		onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(field, e.target.value)}
 		placeholder={placeholder}
 		className={`h-7 px-2 my-1 inline-flex border-dashed border-primary/50 bg-transparent ${className}`}
 	/>
@@ -20,8 +41,8 @@ const MemoizedInlineInput = memo(({ field, value, onChange, placeholder, classNa
 
 MemoizedInlineInput.displayName = "MemoizedInlineInput";
 
-export default function MessageGenerator() {
-	const [formData, setFormData] = useState({
+export default function MessageGenerator(): JSX.Element {
+	const [formData, setFormData] = useState<FormData>({
 		timeOfDay: "",
 		salutation: "",
 		subject: "",
@@ -30,8 +51,8 @@ export default function MessageGenerator() {
 		rollNo: "",
 	});
 
-	const [isFormComplete, setIsFormComplete] = useState(false);
-	const [isCopied, setIsCopied] = useState(false);
+	const [isFormComplete, setIsFormComplete] = useState<boolean>(false);
+	const [isCopied, setIsCopied] = useState<boolean>(false);
 
 	useEffect(() => {
 		// Check if all fields are filled
@@ -39,14 +60,14 @@ export default function MessageGenerator() {
 		setIsFormComplete(isComplete);
 	}, [formData]);
 
-	const handleInputChange = (field, value) => {
+	const handleInputChange = (field: keyof FormData, value: string): void => {
 		setFormData((prev) => ({
 			...prev,
 			[field]: value,
 		}));
 	};
 
-	const generateMessage = () => {
+	const generateMessage = (): string => {
 		if (!isFormComplete) return "";
 
 		return `Good ${formData.timeOfDay} ${formData.salutation}.
@@ -62,7 +83,7 @@ ${formData.name}
 ${formData.rollNo}`;
 	};
 
-	const copyToClipboard = async () => {
+	const copyToClipboard = async (): Promise<void> => {
 		try {
 			await navigator.clipboard.writeText(generateMessage());
 			setIsCopied(true);
@@ -73,16 +94,17 @@ ${formData.rollNo}`;
 				setIsCopied(false);
 			}, 2000);
 		} catch (err) {
-			toast.error("Failed to copy message");
+			toast.error(`Failed to copy message.`);
+			console.log(err);
 		}
 	};
 
 	// Inline editable components
-	const TimeOfDayDropdown = () => (
+	const TimeOfDayDropdown = (): JSX.Element => (
 		<span className="inline-block">
 			<Select
 				value={formData.timeOfDay}
-				onValueChange={(value) => handleInputChange("timeOfDay", value)}
+				onValueChange={(value: TimeOfDay) => handleInputChange("timeOfDay", value)}
 			>
 				<SelectTrigger className="h-7 px-2 py-1 min-w-[100px] border-dashed border-primary/50 bg-transparent">
 					<SelectValue placeholder="Morning/Afternoon/Evening" />
@@ -96,11 +118,11 @@ ${formData.rollNo}`;
 		</span>
 	);
 
-	const SalutationDropdown = () => (
+	const SalutationDropdown = (): JSX.Element => (
 		<span className="inline-block">
 			<Select
 				value={formData.salutation}
-				onValueChange={(value) => handleInputChange("salutation", value)}
+				onValueChange={(value: Salutation) => handleInputChange("salutation", value)}
 			>
 				<SelectTrigger className="h-7 px-2 py-1 min-w-[80px] border-dashed border-primary/50 bg-transparent">
 					<SelectValue placeholder="Ma'am/Sir" />
